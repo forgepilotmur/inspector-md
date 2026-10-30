@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>[hidden]{display:none!important}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+<title>Инспектор до последнего лея</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik+Mono+One&family=IBM+Plex+Sans+Condensed:ital,wght@0,400;0,600;0,700;1,400&family=PT+Mono&display=swap">
+<style>
+/* Layout: a green-baize office desk; the taxpayer's manila dossier sits in the middle, the corridor queue and the news wire on the side. One deliberate look, no dark/light split. */
+:root{
+  --desk:#1d3a32; --desk-2:#16302a; --desk-line:#2b4d43;
+  --folder:#d6c182; --folder-edge:#b9a364;
+  --paper:#eeebdf; --paper-line:#d9d4c2;
+  --ink:#26307a; --ink-soft:#4a5296;
+  --stamp:#c2262e; --ok:#2f7a3e; --warn:#b7791f; --vip:#6b3fa0;
+  --on-desk:#ebe6d2; --on-desk-muted:#9fb5aa;
+  --carbon:#f3dcd8;
+  --flag-b:#0046ae; --flag-y:#ffd200; --flag-r:#cc092f;
+  --f-display:"Rubik Mono One","Arial Black",Impact,sans-serif;
+  --f-body:"IBM Plex Sans Condensed","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
+  --f-type:"PT Mono","Courier New",ui-monospace,monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{
+  margin:0;background:var(--desk);color:var(--on-desk);font-family:var(--f-body);font-size:16px;line-height:1.45;
+  background-image:
+    radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.06), transparent 60%),
+    repeating-linear-gradient(45deg, rgba(0,0,0,.035) 0 2px, transparent 2px 5px);
+}
+.wrap{max-width:1180px;margin:0 auto;padding-block:18px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+
+/* header */
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 20px}
+.brand{display:flex;gap:14px;align-items:center;min-width:0}
+.flag{display:flex;width:12px;height:44px;flex-direction:column;border-radius:2px;overflow:hidden;flex:none}
+.flag i{flex:1}.flag i:nth-child(1){background:var(--flag-b)}.flag i:nth-child(2){background:var(--flag-y)}.flag i:nth-child(3){background:var(--flag-r)}
+.brand h1{font-family:var(--f-display);font-weight:400;font-size:clamp(17px,2.6vw,26px);line-height:1.05;margin:0;letter-spacing:.01em;text-wrap:balance}
+.brand p{margin:3px 0 0;color:var(--on-desk-muted);font-size:13px;letter-spacing:.04em;text-transform:uppercase}
+.topright{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.clock{font-family:var(--f-type);font-size:15px;background:var(--desk-2);border:1px solid var(--desk-line);padding:6px 10px;border-radius:4px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.clock b{color:var(--flag-y);font-weight:400}
+.lang{display:flex;border:1px solid var(--desk-line);border-radius:4px;overflow:hidden}
+.lang button{background:transparent;border:0;color:var(--on-desk-muted);font:600 13px var(--f-body);padding:7px 11px;cursor:pointer;letter-spacing:.06em}
+.lang button[aria-pressed="true"]{background:var(--on-desk);color:var(--desk)}
+.snd{background:transparent;border:1px solid var(--desk-line);border-radius:4px;color:var(--on-desk);font:600 13px var(--f-body);padding:6px 10px;cursor:pointer;letter-spacing:.04em;white-space:nowrap}
+.snd[aria-pressed="false"]{color:var(--on-desk-muted)}
+.snd:focus-visible{outline:2px solid var(--flag-y);outline-offset:-2px}
+.lang button:focus-visible{outline:2px solid var(--flag-y);outline-offset:-2px}
+
+/* meters */
+.meters{display:grid;grid-template-columns:2fr repeat(4,1fr);gap:10px}
+.meter{background:var(--desk-2);border:1px solid var(--desk-line);border-radius:6px;padding:10px 12px;min-width:0}
+.meter .lab{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--on-desk-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meter .val{font-family:var(--f-type);font-size:15px;margin:2px 0 6px;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar{height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:3px;transition:width .5s ease}
+.flash-up{animation:fu .7s}.flash-down{animation:fd .7s}
+@keyframes fu{0%{box-shadow:0 0 0 2px rgba(120,220,140,.9)}100%{box-shadow:0 0 0 0 transparent}}
+@keyframes fd{0%{box-shadow:0 0 0 2px rgba(240,90,90,.9)}100%{box-shadow:0 0 0 0 transparent}}
+
+/* desk */
+.desk{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
+.stage{display:flex;flex-direction:column;gap:14px;min-width:0}
+
+.folder{position:relative;background:var(--folder);border-radius:4px 8px 8px 8px;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.35), inset 0 0 0 1px var(--folder-edge);margin-top:22px}
+.folder .tab{position:absolute;top:-22px;left:0;background:var(--folder);padding:4px 14px 2px;border-radius:6px 6px 0 0;font-family:var(--f-type);font-size:12.5px;color:#5a4a1c;letter-spacing:.06em;box-shadow:inset 1px 1px 0 var(--folder-edge),inset -1px 0 0 var(--folder-edge)}
+.sheet{background:var(--paper);color:var(--ink);border-radius:2px;padding:20px 22px 22px;box-shadow:0 1px 0 var(--paper-line),0 2px 6px rgba(0,0,0,.15);background-image:repeating-linear-gradient(transparent 0 27px, var(--paper-line) 27px 28px);background-position:0 12px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.idrow{display:flex;gap:18px;align-items:flex-start}
+.photo{flex:none;width:96px;height:112px;background:#fffef8;display:grid;place-items:center;font-size:58px;transform:rotate(-2deg);box-shadow:0 2px 5px rgba(0,0,0,.25);position:relative;border:6px solid #fff}
+.photo::after{content:"";position:absolute;top:-14px;left:50%;width:14px;height:30px;border:2px solid #8c8c8c;border-radius:8px;transform:translateX(-50%) rotate(8deg);border-bottom-color:transparent}
+.ident{min-width:0;display:flex;flex-direction:column;gap:6px}
+.ident h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(17px,2.4vw,22px);line-height:1.15;color:#1b1f45;text-wrap:balance}
+.badges{display:flex;gap:6px;flex-wrap:wrap}
+.badge{font:700 11px var(--f-body);letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:3px;border:1.5px solid currentColor}
+.badge.vip{color:var(--vip)}
+.badge.ok{color:var(--ok)}
+.biz{font-family:var(--f-type);font-size:15px;color:var(--ink)}
+.declared{font-family:var(--f-type);font-size:14px;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}
+.declared span{color:var(--ink-soft);text-transform:uppercase;font-size:11.5px;letter-spacing:.06em;font-family:var(--f-body);font-weight:600}
+.declared b{font-weight:400;background:rgba(38,48,122,.08);padding:1px 6px}
+.clues h3,.audit h3{margin:0 0 6px;font:700 12px var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft)}
+.clues ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-family:var(--f-type);font-size:14.5px}
+.clues li{padding-left:18px;position:relative}
+.clues li::before{content:"—";position:absolute;left:0}
+.quote{margin:0;font-style:italic;font-size:17px;color:#2c2c2c;border-left:3px solid var(--folder-edge);padding:2px 0 2px 12px;max-width:62ch}
+.audit{background:var(--carbon);border:1px dashed var(--stamp);padding:12px 14px;font-family:var(--f-type);font-size:14.5px;color:#5b1418;animation:slidein .45s ease}
+.audit h3{color:var(--stamp)}
+@keyframes slidein{from{transform:translateY(-6px);opacity:.3}to{transform:none;opacity:1}}
+
+.stamp{position:absolute;right:6%;top:38%;pointer-events:none;font-family:var(--f-display);font-size:clamp(20px,4vw,34px);padding:8px 16px;border:5px double currentColor;border-radius:8px;transform:rotate(-14deg);opacity:.86;mix-blend-mode:multiply;text-transform:uppercase;letter-spacing:.04em;animation:stampin .38s cubic-bezier(.2,1.6,.4,1) both}
+.stamp.fine{color:var(--stamp)}.stamp.forgive{color:var(--ok)}.stamp.bribe{color:var(--vip)}
+@keyframes stampin{0%{transform:rotate(-14deg) scale(2.6);opacity:0}70%{opacity:.95}100%{transform:rotate(-14deg) scale(1);opacity:.86}}
+
+/* actions */
+.actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.act{appearance:none;border:0;border-radius:6px;padding:12px 14px;text-align:left;cursor:pointer;font:700 16px var(--f-body);color:#fff;display:flex;flex-direction:column;gap:2px;box-shadow:0 3px 0 rgba(0,0,0,.35);transition:transform .08s, box-shadow .08s, filter .15s}
+.act small{font-weight:400;font-size:12.5px;opacity:.85}
+.act:hover:not(:disabled){filter:brightness(1.08)}
+.act:active:not(:disabled){transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.35)}
+.act:focus-visible{outline:3px solid var(--flag-y);outline-offset:2px}
+.act:disabled{opacity:.45;cursor:not-allowed}
+.act.fine{background:var(--stamp)}
+.act.audit{background:var(--ink)}
+.act.forgive{background:var(--ok)}
+.act.bribe{background:transparent;color:var(--on-desk);border:2px dashed #c8a96a;box-shadow:none}
+.act.bribe small{color:#d8c08b;opacity:1}
+.act.primary{background:var(--flag-y);color:#1b1f45;align-items:center;text-align:center;font-family:var(--f-display);font-weight:400;font-size:16px;letter-spacing:.03em}
+
+.protocol{background:var(--desk-2);border:1px solid var(--desk-line);border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:12px;animation:slidein .35s ease}
+.protocol p{margin:0;font-size:16.5px;max-width:70ch}
+.deltas{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-family:var(--f-type);font-size:13px;padding:3px 9px;border-radius:20px;font-variant-numeric:tabular-nums}
+.chip.good{background:rgba(80,180,100,.18);color:#9fe0ad}
+.chip.bad{background:rgba(220,70,70,.18);color:#f3a6a6}
+.headline{border-top:1px dashed var(--desk-line);padding-top:10px;font-size:14px;color:var(--on-desk-muted)}
+.headline b{color:var(--flag-y);font-weight:700;letter-spacing:.06em;font-size:11.5px;text-transform:uppercase;margin-right:6px}
+
+/* side */
+.side{display:flex;flex-direction:column;gap:14px;min-width:0}
+.panel{background:var(--desk-2);border:1px solid var(--desk-line);border-radius:6px;padding:12px 14px}
+.panel h3{margin:0 0 10px;font:700 12px var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--on-desk-muted)}
+.q{display:flex;flex-wrap:wrap;gap:6px}
+.q span{width:40px;height:40px;display:grid;place-items:center;font-size:22px;background:rgba(255,255,255,.06);border-radius:50%}
+.q em{font-style:normal;color:var(--on-desk-muted);font-size:14px}
+.news{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none;font-size:14px}
+.news li{border-left:2px solid var(--flag-r);padding-left:9px;color:var(--on-desk)}
+.news li:first-child{animation:slidein .4s}
+.news .d{display:block;font-family:var(--f-type);font-size:11.5px;color:var(--on-desk-muted)}
+.muted{color:var(--on-desk-muted)}
+
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(8,20,16,.72);display:grid;place-items:center;padding:16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-top:max(16px,env(safe-area-inset-top,0px));padding-bottom:max(16px,env(safe-area-inset-bottom,0px));z-index:20;overflow-y:auto}
+.memo{background:var(--paper);color:#22243f;max-width:600px;width:100%;border-radius:3px;padding:26px 26px 22px;box-shadow:0 20px 60px rgba(0,0,0,.5);display:flex;flex-direction:column;gap:14px;position:relative;animation:slidein .35s ease;border-top:8px solid var(--folder)}
+.memo .kick{font:700 12px var(--f-body);letter-spacing:.1em;text-transform:uppercase;color:var(--stamp)}
+.memo h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(20px,4vw,28px);line-height:1.1;text-wrap:balance;color:#1b1f45}
+.memo p{margin:0;font-size:16.5px;max-width:62ch}
+.memo ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:15.5px}
+.memo .typed{font-family:var(--f-type);font-size:14.5px;color:var(--ink)}
+.memo .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.memo .stats div{background:rgba(38,48,122,.07);padding:8px 10px;border-radius:3px}
+.memo .stats span{display:block;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);font-weight:600}
+.memo .stats b{font-family:var(--f-type);font-weight:400;font-size:16px;font-variant-numeric:tabular-nums}
+.memo .act{margin-top:4px}
+.memo .bigstamp{position:absolute;right:18px;top:16px;font-family:var(--f-display);color:var(--stamp);border:4px double currentColor;padding:4px 10px;transform:rotate(9deg);opacity:.75;font-size:14px;mix-blend-mode:multiply}
+.memo .langrow{display:flex;gap:8px}
+.memo .langrow button{flex:1;padding:10px;border:2px solid #22243f;background:transparent;border-radius:4px;font:700 15px var(--f-body);cursor:pointer;color:#22243f}
+.memo .langrow button[aria-pressed="true"]{background:#22243f;color:var(--paper)}
+
+@media (max-width:900px){
+  .desk{grid-template-columns:1fr}
+  .meters{grid-template-columns:repeat(2,1fr)}
+  .meters .meter:first-child{grid-column:1/-1}
+}
+@media (max-width:480px){
+  .idrow{gap:12px}
+  .photo{width:72px;height:86px;font-size:42px;border-width:4px}
+  .sheet{padding:16px 14px}
+  .stamp{right:4%;top:30%}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="flag" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div><h1 id="t-title"></h1><p id="t-office"></p></div>
+    </div>
+    <div class="topright">
+      <div class="clock" id="clock"></div>
+      <button class="snd" id="snd" type="button"></button>
+      <div class="lang" role="group" aria-label="Язык / Limba">
+        <button id="lang-ru" type="button">RU</button>
+        <button id="lang-ro" type="button">RO</button>
+      </div>
+    </div>
+  </header>
+
+  <section class="meters" id="meters" aria-live="polite"></section>
+
+  <main class="desk">
+    <div class="stage" id="stage"></div>
+    <aside class="side">
+      <div class="panel"><h3 id="t-queue"></h3><div class="q" id="queue"></div></div>
+      <div class="panel"><h3 id="t-news"></h3><ul class="news" id="news"></ul></div>
+    </aside>
+  </main>
+</div>
+
+<div class="modal" id="modal" hidden><div class="memo" id="memo" role="dialog" aria-modal="true"></div></div>
+
+<script>
+const PLAN = 800000, DAYS = 4, START = 9, END = 17;
+
+const UI = {
+  title:{ru:"До последнего лея",ro:"Până la ultimul leu"},
+  office:{ru:"Налоговая инспекция · сектор Ботаника · кабинет 13",ro:"Inspecția fiscală · sectorul Botanica · biroul 13"},
+  day:{ru:"День",ro:"Ziua"}, of:{ru:"из",ro:"din"},
+  plan:{ru:"План на неделю",ro:"Planul pe săptămână"},
+  pop:{ru:"Любовь народа",ro:"Dragostea poporului"},
+  boss:{ru:"Настроение шефа",ro:"Dispoziția șefului"},
+  risk:{ru:"Интерес антикоррупции",ro:"Interesul Anticorupției"},
+  pocket:{ru:"Карман",ro:"Buzunar"},
+  collected:{ru:"Собрано",ro:"Strâns"},
+  dossier:{ru:"ДОСЬЕ",ro:"DOSAR"},
+  declared:{ru:"Задекларировано",ro:"Declarat"},
+  perMonth:{ru:"в месяц",ro:"pe lună"},
+  clues:{ru:"Что видно невооружённым глазом",ro:"Ce se vede cu ochiul liber"},
+  auditRes:{ru:"Результат проверки",ro:"Rezultatul controlului"},
+  fine:{ru:"Штраф",ro:"Amendă"}, fineSub:{ru:"1 час · без проверки — наугад",ro:"1 oră · fără control — din ochi"}, fineSubA:{ru:"1 час · по результатам проверки",ro:"1 oră · după rezultatele controlului"},
+  audit:{ru:"Проверка",ro:"Control"}, auditSub:{ru:"+1,5 часа · узнать правду",ro:"+1,5 ore · afli adevărul"},
+  forgive:{ru:"Отпустить с миром",ro:"Lasă-l în pace"}, forgiveSub:{ru:"1 час · народ запомнит",ro:"1 oră · poporul ține minte"},
+  bribeSub:{ru:"1 час · тихо, без бумаг",ro:"1 oră · încet, fără hârtii"},
+  noSys:{ru:"система сегодня не работает",ro:"sistemul azi nu merge"},
+  noTime:{ru:"не успеешь до 17:00",ro:"nu mai ai timp până la 17:00"},
+  done:{ru:"уже проверен",ro:"deja verificat"},
+  next:{ru:"Следующий!",ro:"Următorul!"},
+  queue:{ru:"Очередь в коридоре",ro:"Coada din hol"},
+  queueEmpty:{ru:"Коридор пуст. Слышно, как гудит лампа.",ro:"Holul e gol. Se aude cum bâzâie becul."},
+  more:{ru:"ещё",ro:"încă"},
+  news:{ru:"Лента новостей",ro:"Fluxul de știri"},
+  newsEmpty:{ru:"Пока тихо. Журналисты пьют кофе.",ro:"Deocamdată liniște. Jurnaliștii beau cafea."},
+  vip:{ru:"Важная персона",ro:"Persoană importantă"},
+  lei:{ru:"лей",ro:"lei"},
+  stFine:{ru:"Оштрафован",ro:"Amendat"}, stForgive:{ru:"Отпущен",ro:"Iertat"}, stBribe:{ru:"Договорились",ro:"Ne-am înțeles"},
+  toWork:{ru:"К работе",ro:"La lucru"},
+  nextDay:{ru:"Домой, спать",ro:"Acasă, la somn"},
+  finish:{ru:"Узнать, чем всё кончилось",ro:"Află cum s-a terminat"},
+  again:{ru:"Ещё одна неделя",ro:"Încă o săptămână"},
+  start:{ru:"Принять смену",ro:"Preia tura"},
+  morning:{ru:"Утро",ro:"Dimineața"},
+  evening:{ru:"Вечер",ro:"Seara"},
+  dayResult:{ru:"Итоги дня",ro:"Bilanțul zilei"},
+  today:{ru:"Собрано за день",ro:"Strâns azi"},
+  total:{ru:"Всего по плану",ro:"Total din plan"},
+  weekEnd:{ru:"Конец недели",ro:"Sfârșitul săptămânii"},
+  fines:{ru:"Штрафов",ro:"Amenzi"}, audits:{ru:"Проверок",ro:"Controale"}, bribes:{ru:"Конвертов",ro:"Plicuri"},
+  introKick:{ru:"Приказ о назначении",ro:"Ordin de numire"},
+  introH:{ru:"Ты — налоговый инспектор. Выжми план до последнего лея.",ro:"Ești inspector fiscal. Stoarce planul până la ultimul leu."},
+  introP:{ru:"Кишинёв, кабинет 13. У тебя 4 рабочих дня и план 800 000 лей. В коридоре очередь: бабушки с петрушкой, маршрутчики, винодел «для себя» и люди в тёмных очках. Решай, кого штрафовать, кого проверять, а кого отпустить.",ro:"Chișinău, biroul 13. Ai 4 zile de lucru și un plan de 800 000 de lei. Pe hol e coadă: bunici cu pătrunjel, rutieriști, un vinificator «pentru consum propriu» și oameni cu ochelari negri. Tu decizi pe cine amenzi, pe cine verifici și pe cine lași în pace."},
+  rules:{ru:[
+    "Каждый посетитель — час. Проверка — ещё полтора. В 17:00 двери закрываются.",
+    "Штраф без проверки: виновный отдаст половину, невиновный пойдёт в суд.",
+    "Любовь народа на нуле — митинг. Шеф на нуле — увольнение.",
+    "Конверты приятно шуршат. Антикоррупция тоже слышит этот шорох."
+  ],ro:[
+    "Fiecare vizitator — o oră. Controlul — încă o oră și jumătate. La 17:00 se închide ușa.",
+    "Amendă fără control: vinovatul dă doar jumătate, nevinovatul merge în judecată.",
+    "Dragostea poporului la zero — miting. Șeful la zero — concediere.",
+    "Plicurile foșnesc plăcut. Anticorupția aude și ea foșnetul."
+  ]},
+  chooseLang:{ru:"Язык игры",ro:"Limba jocului"},
+  sndOn:{ru:"Звук",ro:"Sunet"}, sndOff:{ru:"Без звука",ro:"Fără sunet"},
+};
+
+const C = [
+ {id:"zina",e:"👵",poor:1,guilty:1,ev:40,decl:0,
+  n:{ru:"Баба Зина",ro:"Bunica Zina"},
+  b:{ru:"Торгует петрушкой у Центрального рынка",ro:"Vinde pătrunjel lângă Piața Centrală"},
+  cl:{ru:["3 пучка петрушки","1 банка солёных огурцов","Кассового аппарата нет. Есть внук."],ro:["3 legături de pătrunjel","1 borcan de castraveți murați","Casă de marcat nu are. Are un nepot."]},
+  q:{ru:"Сынок, мне только на хлеб и на лекарства…",ro:"Puiule, îmi trebuie doar de pâine și de pastile…"},
+  tr:{ru:"Скрытый доход: 40 лей. Огурцы, кстати, отличные.",ro:"Venit ascuns: 40 de lei. Castraveții, apropo, sunt excelenți."},
+  nf:{ru:"ИНСПЕКТОР ОШТРАФОВАЛ БАБУШКУ ЗА ПЕТРУШКУ. Видео набрало 2 млн просмотров.",ro:"INSPECTORUL A AMENDAT-O PE BUNICA PENTRU PĂTRUNJEL. Video: 2 milioane de vizualizări."},
+  nn:{ru:"Баба Зина подарила инспектору банку огурцов. Это не взятка, это любовь.",ro:"Bunica Zina i-a dăruit inspectorului un borcan de castraveți. Nu e mită, e dragoste."}},
+ {id:"vasile",e:"🚐",guilty:1,ev:90000,decl:0,
+  n:{ru:"Васile «Маршрутка»",ro:"Vasile «Rutiera»"},
+  b:{ru:"Официально безработный",ro:"Oficial șomer"},
+  cl:{ru:["Получает пособие по безработице","Владеет четырьмя маршрутками на линиях 112 и 117","Говорит по трём телефонам одновременно"],ro:["Primește ajutor de șomaj","Deține patru rutiere pe liniile 112 și 117","Vorbește la trei telefoane deodată"]},
+  q:{ru:"Какие маршрутки? Это машины друга. Четырёх друзей.",ro:"Ce rutiere? Sunt mașinile unui prieten. A patru prieteni."},
+  tr:{ru:"Скрытый доход: 90 000 лей. Все четыре «друга» — это он сам в разных кепках.",ro:"Venit ascuns: 90 000 de lei. Toți cei patru «prieteni» sunt el, cu șepci diferite."},
+  bribe:{l:{ru:"Взять проездной на всю жизнь",ro:"Ia abonament pe viață"},a:0,r:5},
+  nf:{ru:"Пассажиры 112-й узнали, что их водитель — миллионер. Сдачу всё равно не дал.",ro:"Pasagerii rutierei 112 au aflat că șoferul e milionar. Restul tot nu l-a dat."}},
+ {id:"gheorghe",e:"🍷",guilty:1,ev:150000,decl:3000,
+  n:{ru:"Дед Георге, винодел",ro:"Moș Gheorghe, vinificator"},
+  b:{ru:"Делает вино «для себя» в Яловенах",ro:"Face vin «pentru consum propriu» la Ialoveni"},
+  cl:{ru:["50 тонн вина «для себя»","Фура с надписью «Вино. Для себя» уехала в Польшу","Печень в идеальном состоянии — подозрительно"],ro:["50 de tone de vin «pentru sine»","Un TIR cu inscripția «Vin. Pentru sine» a plecat în Polonia","Ficatul e în stare perfectă — suspect"]},
+  q:{ru:"Гости приходят, пьют. Что я, гостям не налью?",ro:"Vin oaspeți, beau. Ce, să nu le torn oaspeților?"},
+  tr:{ru:"Скрытый доход: 150 000 лей. «Гости» — это сеть супермаркетов в Варшаве.",ro:"Venit ascuns: 150 000 de lei. «Oaspeții» sunt o rețea de supermarketuri din Varșovia."},
+  bribe:{l:{ru:"Принять «дегустационную» бутыль на 10 литров",ro:"Accepți o damigeană «de degustare» de 10 litri"},a:1500,r:12},
+  nb:{ru:"Инспектора видели с 10-литровой бутылью. Говорит, это вода. Красная.",ro:"Inspectorul a fost văzut cu o damigeană de 10 litri. Zice că e apă. Roșie."}},
+ {id:"ion",e:"💻",guilty:0,ev:0,decl:80000,
+  n:{ru:"Ион, айтишник",ro:"Ion, IT-ist"},
+  b:{ru:"Резидент IT-парка, платит 7% по закону",ro:"Rezident al parcului IT, plătește 7% legal"},
+  cl:{ru:["Новый ноутбук и электросамокат","Часто произносит слово «деплой»","Подозрительно спокоен"],ro:["Laptop nou și trotinetă electrică","Spune des cuvântul «deploy»","Suspect de calm"]},
+  q:{ru:"Вот все документы. И копия в облаке. И ещё одна копия.",ro:"Poftim toate actele. Și o copie în cloud. Și încă o copie."},
+  tr:{ru:"Нарушений нет. Всё легально. К сожалению.",ro:"Încălcări nu sunt. Totul e legal. Din păcate."},
+  nf:{ru:"Айтишник обжаловал штраф онлайн за 4 минуты и написал об этом тред на 40 постов.",ro:"IT-istul a contestat amenda online în 4 minute și a scris un thread de 40 de postări."}},
+ {id:"mariana",e:"💒",guilty:1,ev:220000,decl:5000,
+  n:{ru:"Тётя Мариана, свадьбы под ключ",ro:"Tanti Mariana, nunți la cheie"},
+  b:{ru:"Ресторан «Замок из картона»",ro:"Restaurantul «Castelul de Carton»"},
+  cl:{ru:["Каждые выходные свадьба на 300 человек","Подарки — только наличными, в конвертах","Ведущий, оркестр и голубь — всё «по дружбе»"],ro:["În fiecare weekend — nuntă de 300 de oameni","Darul — doar cash, în plic","Prezentatorul, taraful și porumbelul — totul «din prietenie»"]},
+  q:{ru:"Какой доход? Люди просто приходят порадоваться за молодых!",ro:"Ce venit? Oamenii vin doar să se bucure pentru tineri!"},
+  tr:{ru:"Скрытый доход: 220 000 лей. Голубь тоже работал неофициально.",ro:"Venit ascuns: 220 000 de lei. Porumbelul a lucrat și el la negru."},
+  bribe:{l:{ru:"Пойти кумом на свадьбу (конверт дарят тебе)",ro:"Mergi naș la nuntă (plicul ți-l dau ție)"},a:10000,r:20},
+  nf:{ru:"Свадьба в «Замке из картона» прошла с кассовым аппаратом. Гости плакали.",ro:"Nunta de la «Castelul de Carton» a avut casă de marcat. Oaspeții au plâns."}},
+ {id:"rusu",e:"🦁",poor:1,guilty:0,ev:0,decl:0,
+  n:{ru:"Дед Руссу",ro:"Bunelul Rusu"},
+  b:{ru:"Трёхэтажный дом, в котором никто не живёт",ro:"Casă cu trei etaje în care nu locuiește nimeni"},
+  cl:{ru:["Дочь — сиделка в Италии, зять — на стройке в Португалии","Во дворе фонтан и два бетонных льва","Деньги приходят переводами каждый месяц"],ro:["Fiica — badantă în Italia, ginerele — pe șantier în Portugalia","În curte — fântână arteziană și doi lei de beton","Banii vin prin transfer în fiecare lună"]},
+  q:{ru:"Внуки в Италии, дети в Португалии, а я сторожу львов.",ro:"Nepoții în Italia, copiii în Portugalia, iar eu păzesc leii."},
+  tr:{ru:"Нарушений нет. Переводы от семьи налогом не облагаются. Львы тоже.",ro:"Încălcări nu sunt. Transferurile de la familie nu se impozitează. Nici leii."}},
+ {id:"cumatru",e:"🏗️",vip:1,guilty:1,ev:500000,decl:15000,
+  n:{ru:"Кум шефа",ro:"Cumătrul șefului"},
+  b:{ru:"ООО «Дороги без ям»",ro:"SRL «Drumuri fără gropi»"},
+  cl:{ru:["Выиграл 14 тендеров подряд","Дорогу заасфальтировали в среду, в четверг её не стало","Шеф уже звонил тебе. Дважды."],ro:["A câștigat 14 licitații la rând","Drumul asfaltat miercuri a dispărut joi","Șeful te-a sunat deja. De două ori."]},
+  q:{ru:"Привет от Виктора Ивановича. Он сказал, ты понятливый.",ro:"Salutări de la Victor Ivanovici. A zis că ești băiat de înțeles."},
+  tr:{ru:"Скрытый доход: 500 000 лей. Асфальт, судя по всему, был нарисован.",ro:"Venit ascuns: 500 000 de lei. Asfaltul, se pare, era desenat."},
+  nf:{ru:"СЕНСАЦИЯ: инспектор оштрафовал кума начальника. Народ носит его на руках. Шеф — нет.",ro:"SENZAȚIE: un inspector l-a amendat pe cumătrul șefului. Poporul îl poartă pe brațe. Șeful — nu."},
+  nn:{ru:"«Дороги без ям» выиграли 15-й тендер. Ямы справили новоселье.",ro:"«Drumuri fără gropi» a câștigat a 15-a licitație. Gropile și-au făcut casă nouă."}},
+ {id:"doina",e:"📱",guilty:1,ev:70000,decl:0,
+  n:{ru:"Дойна Lifestyle",ro:"Doina Lifestyle"},
+  b:{ru:"Блогер, 300 тысяч подписчиков",ro:"Bloggeriță, 300 de mii de urmăritori"},
+  cl:{ru:["Рекламирует детокс-чай, крем из улиток и курс «Стань миллионером»","Отдых на Мальдивах — «по бартеру»","Уже снимает сторис из твоего кабинета"],ro:["Face reclamă la ceai detox, cremă de melci și cursul «Devino milionar»","Vacanța în Maldive — «barter»","Deja filmează stories din biroul tău"]},
+  q:{ru:"Ой, а можно я вас сниму? Подписчикам будет интересно 💅",ro:"Vai, pot să vă filmez? Urmăritorilor o să le placă 💅"},
+  tr:{ru:"Скрытый доход: 70 000 лей. Детокс-чай — обычная липа в розовой пачке.",ro:"Venit ascuns: 70 000 de lei. Ceaiul detox e tei obișnuit, în pachet roz."},
+  nf:{ru:"Дойна выложила сторис «Меня ограбило государство». 300 тысяч лайков. Налоги заплатила.",ro:"Doina a postat «M-a jefuit statul». 300 de mii de like-uri. Taxele le-a plătit."},
+  nn:{ru:"Дойна отметила инспектора в сторис. У него теперь 12 новых подписчиков.",ro:"Doina l-a etichetat pe inspector în stories. Acum are 12 urmăritori noi."}},
+ {id:"nelu",e:"💈",guilty:1,ev:30000,decl:2000,
+  n:{ru:"Парикмахерская «У Нелу»",ro:"Frizeria «La Nelu»"},
+  b:{ru:"Стрижки, бритьё и новости района",ro:"Tunsori, bărbierit și știrile cartierului"},
+  cl:{ru:["Очередь с семи утра","Касса есть, но в ней живёт кот","Нелу знает все сплетни города"],ro:["Coadă de la șapte dimineața","Casă de marcat există, dar în ea locuiește o pisică","Nelu știe toate bârfele orașului"]},
+  q:{ru:"Садись, подровняю бесплатно, пока бумаги смотришь.",ro:"Stai jos, te aranjez gratis cât te uiți prin hârtii."},
+  tr:{ru:"Скрытый доход: 30 000 лей. Кот в кассе тоже не оформлен.",ro:"Venit ascuns: 30 000 de lei. Nici pisica din casa de marcat nu e angajată oficial."},
+  bribe:{l:{ru:"Принять бесплатную стрижку пожизненно",ro:"Accepți tuns gratuit pe viață"},a:0,r:6},
+  nb:{ru:"Инспектора заметили с идеальной стрижкой. Антикоррупция заинтересовалась укладкой.",ro:"Inspectorul a fost văzut cu o tunsoare impecabilă. Anticorupția e interesată de freză."}},
+ {id:"sergiu",e:"🐶",poor:1,guilty:0,ev:0,decl:0,
+  n:{ru:"Серджиу, криптоинвестор",ro:"Sergiu, investitor crypto"},
+  b:{ru:"Вложил всё в монету с собакой",ro:"A investit tot într-o monedă cu un câine"},
+  cl:{ru:["На аватарке Lamborghini","Живёт у мамы","Плачет, когда видит любой график"],ro:["În poza de profil — un Lamborghini","Locuiește la mama","Plânge când vede orice grafic"]},
+  q:{ru:"Доход? Брат, у меня минус 98%. Можно я у вас посижу, тут тепло.",ro:"Venit? Frate, sunt pe minus 98%. Pot să stau puțin la voi, că e cald."},
+  tr:{ru:"Нарушений нет. Дохода тоже нет. Собака съела всё.",ro:"Încălcări nu sunt. Nici venit nu e. Câinele a mâncat tot."}},
+ {id:"tudor",e:"🚗",guilty:1,ev:280000,decl:4000,
+  n:{ru:"Тудор, «машины для себя»",ro:"Tudor, «mașini pentru uz personal»"},
+  b:{ru:"Пригоняет авто из Германии",ro:"Aduce mașini din Germania"},
+  cl:{ru:["37 машин за год — «для себя»","У всех пробег ровно 120 000 км","На площадке висит плакат «Скидки!»"],ro:["37 de mașini pe an — «pentru uz personal»","Toate au exact 120 000 km la bord","Pe platformă atârnă un banner «Reduceri!»"]},
+  q:{ru:"Я люблю менять машины. Каждый день. Это хобби.",ro:"Îmi place să schimb mașinile. În fiecare zi. E hobby."},
+  tr:{ru:"Скрытый доход: 280 000 лей. Пробег скручен на всех 37 машинах. И на одном тракторе.",ro:"Venit ascuns: 280 000 de lei. Kilometrajul dat înapoi la toate 37. Și la un tractor."},
+  bribe:{l:{ru:"Взять конверт «на бензин» — 20 000 лей",ro:"Iei plicul «de benzină» — 20 000 de lei"},a:20000,r:30}},
+ {id:"irina",e:"📐",poor:1,guilty:1,ev:18000,decl:0,
+  n:{ru:"Ирина Петровна, учитель математики",ro:"Irina Petrovna, profesoară de matematică"},
+  b:{ru:"Репетиторство на дому",ro:"Meditații acasă"},
+  cl:{ru:["Перед бакалавриатом к ней ходит пол-района","Зарплата в школе — 7 500 лей","Красная ручка всегда при ней"],ro:["Înainte de BAC vine la ea jumătate de cartier","Salariul la școală — 7 500 de lei","Pixul roșu e mereu la ea"]},
+  q:{ru:"Молодой человек, а вы сами интегралы решать умеете?",ro:"Tinere, dumneata știi să rezolvi integrale?"},
+  tr:{ru:"Скрытый доход: 18 000 лей. Её ученики поступили в 14 университетов Европы.",ro:"Venit ascuns: 18 000 de lei. Elevii ei au intrat la 14 universități din Europa."},
+  nf:{ru:"Оштрафованная учительница поставила инспектору «2» за поведение. Родители района возмущены.",ro:"Profesoara amendată i-a pus inspectorului «2» la purtare. Părinții din cartier sunt revoltați."}},
+ {id:"aurel",e:"🌰",guilty:1,ev:170000,decl:1000,
+  n:{ru:"Фермер Аурел, грецкие орехи",ro:"Fermierul Aurel, nuci"},
+  b:{ru:"Сад на 40 гектаров",ro:"Livadă de 40 de hectare"},
+  cl:{ru:["Говорит, весь урожай съели вороны","Вороны, видимо, уехали фурой во Францию","Трактор новый, плёнку с сиденья ещё не сняли"],ro:["Zice că toată recolta au mâncat-o ciorile","Ciorile, se pare, au plecat cu TIR-ul în Franța","Tractor nou, cu folia încă pe scaun"]},
+  q:{ru:"Вороны в этом году прожорливые. Европейские вороны.",ro:"Ciorile anul ăsta-s lacome. Ciori europene."},
+  tr:{ru:"Скрытый доход: 170 000 лей. Вороны оказались оптовиками из Лиона.",ro:"Venit ascuns: 170 000 de lei. Ciorile s-au dovedit angrosiști din Lyon."}},
+ {id:"placinte",e:"🥟",guilty:1,ev:130000,decl:20000,
+  n:{ru:"Сеть «Плацинды у бабушки»",ro:"Rețeaua «Plăcinte la Bunica»"},
+  b:{ru:"Семь кафе в Кишинёве",ro:"Șapte cafenele în Chișinău"},
+  cl:{ru:["Табличка «Терминал не работает» висит с 2019 года","Очередь даже в понедельник утром","«Бабушка», судя по всему, — это Дорин, 40 лет"],ro:["Anunțul «Terminalul nu funcționează» atârnă din 2019","Coadă chiar și luni dimineața","«Bunica», se pare, e Dorin, 40 de ani"]},
+  q:{ru:"Попробуйте с брынзой, а потом поговорим о цифрах.",ro:"Gustați una cu brânză, apoi vorbim de cifre."},
+  tr:{ru:"Скрытый доход: 130 000 лей. Терминал работает, его просто прячут под полотенцем.",ro:"Venit ascuns: 130 000 de lei. Terminalul merge, e doar ascuns sub un prosop."},
+  bribe:{l:{ru:"Съесть «пробную» плацинду (и ещё 40 с собой)",ro:"Mănânci o plăcintă «de probă» (și încă 40 la pachet)"},a:800,r:8}},
+ {id:"ochelari",e:"🕶️",vip:1,guilty:1,ev:900000,decl:9000,
+  n:{ru:"Человек в тёмных очках",ro:"Omul cu ochelari negri"},
+  b:{ru:"«Я по делу. Имени не будет»",ro:"«Sunt aici cu treabă. Nume nu vor fi»"},
+  cl:{ru:["Приехал на чёрном внедорожнике без номеров","Охранник держит над ним зонт. В помещении.","Здоровается словом «иммунитет»"],ro:["A venit cu un SUV negru fără numere","Bodyguardul îi ține umbrela. În birou.","Spune «imunitate» în loc de «bună ziua»"]},
+  q:{ru:"Ты молодой, у тебя карьера. Длинная. Или нет.",ro:"Ești tânăr, ai o carieră. Lungă. Sau nu."},
+  tr:{ru:"Скрытый доход: 900 000 лей. Половина документов при проверке «случайно» сгорела.",ro:"Venit ascuns: 900 000 de lei. Jumătate din acte au ars «accidental» în timpul controlului."},
+  bribe:{l:{ru:"Взять конверт (50 000 лей) и забыть его лицо",ro:"Iei plicul (50 000 de lei) și îi uiți fața"},a:50000,r:40},
+  nf:{ru:"Человек в тёмных очках заплатил налоги. Эксперты называют это чудом года.",ro:"Omul cu ochelari negri și-a plătit taxele. Experții o numesc minunea anului."}},
+ {id:"mihai",e:"🧥",poor:1,guilty:0,ev:0,decl:0,
+  n:{ru:"Михай, студент",ro:"Mihai, student"},
+  b:{ru:"Продаёт свои старые вещи в интернете",ro:"Își vinde lucrurile vechi pe internet"},
+  cl:{ru:["Продал три куртки и велосипед","Обедает лапшой быстрого приготовления","Купил билет домой в Бельцы"],ro:["A vândut trei geci și o bicicletă","Prânzește cu tăiței instant","Și-a luat bilet acasă la Bălți"]},
+  q:{ru:"Это мои вещи. Я просто хочу есть.",ro:"Sunt lucrurile mele. Vreau doar să mănânc."},
+  tr:{ru:"Нарушений нет. Продажа личных вещей — не бизнес. Велосипед, правда, был так себе.",ro:"Încălcări nu sunt. Vânzarea lucrurilor personale nu e afacere. Bicicleta, ce-i drept, era cam praf."}},
+ {id:"ilie",e:"🐝",guilty:0,ev:0,decl:6000,
+  n:{ru:"Дед Илие, пасечник",ro:"Moș Ilie, apicultor"},
+  b:{ru:"Мёд честный, налоги честные",ro:"Miere cinstită, taxe cinstite"},
+  cl:{ru:["Все чеки сложены в банку из-под мёда","Принёс справку от пчёл (шутка, от сельсовета)","За 30 лет ни разу не опоздал с декларацией"],ro:["Toate bonurile sunt într-un borcan de miere","A adus adeverință de la albine (glumă, de la primărie)","În 30 de ani n-a întârziat cu declarația"]},
+  q:{ru:"Вот, сынок, всё по бумагам. И баночка мёда тебе — от души.",ro:"Poftim, puiule, totul e pe acte. Și un borcănel de miere — din suflet."},
+  tr:{ru:"Нарушений нет. Единственный честный человек за неделю. Может, проверить ещё раз? На всякий случай.",ro:"Încălcări nu sunt. Singurul om cinstit din săptămâna asta. Poate să-l mai verifici o dată? Așa, ca să fie."},
+  bribe:{l:{ru:"Взять баночку мёда",ro:"Iei borcănelul de miere"},a:150,r:3}},
+ {id:"benzina",e:"⛽",guilty:1,ev:380000,decl:40000,
+  n:{ru:"АЗС «Бензин и покой»",ro:"Benzinăria «Petrol și Pace»"},
+  b:{ru:"Сеть заправок",ro:"Rețea de benzinării"},
+  cl:{ru:["Цены точь-в-точь как у конкурентов, до бана","Меняются у всех в одну и ту же секунду","Директора всех сетей вместе отдыхают в Вадул-луй-Водэ"],ro:["Prețurile — identice cu ale concurenților, până la ban","Se schimbă la toți în aceeași secundă","Directorii tuturor rețelelor se odihnesc împreună la Vadul lui Vodă"]},
+  q:{ru:"Совпадение. Рынок. Невидимая рука.",ro:"Coincidență. Piața. Mâna invizibilă."},
+  tr:{ru:"Скрытый доход: 380 000 лей. Невидимая рука оказалась вполне видимой, с золотыми часами.",ro:"Venit ascuns: 380 000 de lei. Mâna invizibilă era cât se poate de vizibilă, cu ceas de aur."},
+  bribe:{l:{ru:"Взять «топливную карту» на год",ro:"Iei un «card de combustibil» pe un an"},a:15000,r:25},
+  nf:{ru:"После штрафа АЗС «Бензин и покой» подняли цены. Конкуренты — в ту же секунду.",ro:"După amendă, «Petrol și Pace» a scumpit benzina. Concurenții — în aceeași secundă."}},
+];
+const CARD = Object.fromEntries(C.map(c=>[c.id,c]));
+
+const MSG = {
+  fineFull:{ru:"Проверка всё показала. Заплатил до последнего лея, вздыхая на весь коридор.",ro:"Controlul a arătat tot. A plătit până la ultimul leu, oftând de s-a auzit pe tot holul."},
+  finePart:{ru:"Штраф выписан на глаз. Заплатил, но явно не всё: половину успел спрятать в носок.",ro:"Amenda scrisă din ochi. A plătit, dar nu tot: jumătate a ascuns-o în ciorap."},
+  finePoor:{ru:"Коридор смотрит на тебя с осуждением. Кто-то снимает на телефон.",ro:"Holul te privește cu reproș. Cineva filmează cu telefonul."},
+  fineInn:{ru:"Он был чист и пошёл в суд. Судья отменил штраф за 10 минут и долго смеялся.",ro:"Era curat și a mers în judecată. Judecătorul a anulat amenda în 10 minute, râzând."},
+  fineInnA:{ru:"Ты знал, что он чист, и всё равно оштрафовал. Суд отменил, коридор запомнил.",ro:"Știai că e curat și tot l-ai amendat. Instanța a anulat, holul a ținut minte."},
+  vipFine:{ru:"Ты оштрафовал «неприкасаемого». Народ аплодирует. Телефон шефа раскалился докрасна.",ro:"L-ai amendat pe «intangibil». Poporul aplaudă. Telefonul șefului s-a înroșit."},
+  vipForgive:{ru:"Ты сделал вид, что ничего не видел. Шеф доволен. Кто-то в антикоррупции сделал пометку.",ro:"Te-ai făcut că n-ai văzut. Șeful e mulțumit. Cineva de la Anticorupție și-a notat ceva."},
+  forG:{ru:"Отпустил с миром. Ушёл быстро и не оглядываясь. Подозрительно быстро.",ro:"L-ai lăsat în pace. A plecat repede, fără să se uite înapoi. Suspect de repede."},
+  forGA:{ru:"Ты точно знаешь, что он должен, и всё равно отпустил. Шеф прочитает это в отчёте.",ro:"Știi sigur că datorează și tot l-ai lăsat. Șeful o să citească asta în raport."},
+  forPoor:{ru:"Ты закрыл глаза на мелочь. Коридор одобрительно гудит.",ro:"Ai închis ochii la un fleac. Holul aprobă zgomotos."},
+  forInn:{ru:"Честный человек ушёл домой довольным. Такое тоже бывает.",ro:"Un om cinstit a plecat mulțumit acasă. Se mai întâmplă."},
+  bribe:{ru:"Договорились. Конверт тёплый. Где-то щёлкнул затвор камеры? Наверное, показалось.",ro:"V-ați înțeles. Plicul e cald. Parcă a țăcănit un aparat foto? Probabil ți s-a părut."},
+  nFine:{ru:"Налоговая собрала ещё немного денег. Бюджет поблагодарил и потратил их на люстру.",ro:"Fiscul a mai strâns niște bani. Bugetul a mulțumit și i-a dat pe candelabru."},
+  nCourt:{ru:"Суд снова отменил штраф налоговой. Судья попросил больше так не делать.",ro:"Instanța a anulat din nou o amendă a fiscului. Judecătorul a rugat să nu se mai repete."},
+  left:{ru:"Ещё {n} чел. не дождались приёма и ушли домой, счастливые.",ro:"Încă {n} oameni n-au mai apucat și au plecat acasă, fericiți."},
+  paceGood:{ru:"Шеф посмотрел на цифры и кивнул. У него это высшая форма похвалы.",ro:"Șeful s-a uitat la cifre și a dat din cap. La el asta e lauda supremă."},
+  paceBad:{ru:"Шеф посмотрел на цифры и молча снял очки. Это плохой знак.",ro:"Șeful s-a uitat la cifre și și-a scos ochelarii în tăcere. E semn rău."},
+  cnaPass:{ru:"Вечером по коридору прошли люди из антикоррупции… и прошли мимо. Сегодня.",ro:"Seara pe hol au trecut cei de la Anticorupție… și au trecut mai departe. Azi."},
+  cnaClean:{ru:"Антикоррупция тобой не интересуется. Пока.",ro:"Anticorupția nu e interesată de tine. Deocamdată."},
+};
+
+const BRIEF = {t:{ru:"Планёрка у шефа",ro:"Ședință la șef"},
+  p:{ru:"Виктор Иванович стучит ручкой по столу: «План на неделю — 800 000 лей. Бюджету нужны дороги, премии и новая люстра в мой кабинет. Работаем с 9 до 17. И чтоб без скандалов».",ro:"Victor Ivanovici bate cu pixul în masă: «Planul pe săptămână — 800 000 de lei. Bugetul are nevoie de drumuri, prime și un candelabru nou în biroul meu. Lucrăm de la 9 la 17. Și fără scandaluri»."}};
+const EVENTS = [
+  {id:"planUp",t:{ru:"Министру нужны дороги",ro:"Ministrul vrea drumuri"},p:{ru:"Шеф звонит в 8:58: «План плюс 150 000. Не спрашивай».",ro:"Șeful sună la 8:58: «Planul plus 150 000. Nu întreba»."},fx:s=>{s.plan+=150000}},
+  {id:"power",t:{ru:"Отключили свет",ro:"S-a luat lumina"},p:{ru:"Пока завхоз искал генератор, прошёл час. Генератор нашёлся у кума.",ro:"Până a găsit administratorul generatorul, a trecut o oră. Generatorul era la cumătru."},fx:s=>{s.clock+=1}},
+  {id:"system",t:{ru:"Сервер ушёл на перекур",ro:"Serverul a ieșit la o țigară"},p:{ru:"Электронная система налоговой лежит. Проверки сегодня невозможны, работаем на интуиции.",ro:"Sistemul electronic al fiscului e picat. Azi controale nu se pot face, lucrăm pe intuiție."},fx:s=>{s.noAudit=true}},
+  {id:"placinte",t:{ru:"Плацинды от Валентины",ro:"Plăcinte de la Valentina"},p:{ru:"Коллега Валентина принесла плацинды с брынзой. Шеф съел три и подобрел.",ro:"Colega Valentina a adus plăcinte cu brânză. Șeful a mâncat trei și s-a îmblânzit."},fx:s=>{s.boss=clamp(s.boss+10)}},
+  {id:"press",t:{ru:"В здании телевидение",ro:"Televiziunea e în clădire"},p:{ru:"Съёмочная группа снимает репортаж о налоговой. Штраф для бедного сегодня покажут в прайм-тайм.",ro:"O echipă TV filmează un reportaj despre fisc. O amendă dată unui sărac va fi azi la ora de maximă audiență."},fx:s=>{s.press=true}},
+  {id:"hram",t:{ru:"Храм в соседнем селе",ro:"Hram în satul vecin"},p:{ru:"Половина отдела уехала на храм. Антикоррупция, кажется, тоже. Интерес к тебе немного остыл.",ro:"Jumătate din departament a plecat la hram. Anticorupția, se pare, la fel. Interesul față de tine s-a mai răcit."},fx:s=>{s.risk=clamp(s.risk-10)}},
+];
+
+const ENDS = {
+  arrested:{t:{ru:"Задержан в прямом эфире",ro:"Reținut în direct"},p:{ru:"Люди в масках зашли прямо в кабинет 13. Конверты нашлись в папке «Отчёты за 2019». Вечерние новости открылись твоим лицом.",ro:"Oameni cu cagule au intrat direct în biroul 13. Plicurile au fost găsite în dosarul «Rapoarte 2019». Știrile de seară s-au deschis cu fața ta."}},
+  fired:{t:{ru:"Уволен по звонку",ro:"Concediat la telefon"},p:{ru:"Шеф вызвал тебя и сказал одно слово: «Свободен». Кум шефа передаёт привет.",ro:"Șeful te-a chemat și a spus un singur cuvânt: «Liber». Cumătrul lui îți transmite salutări."}},
+  protest:{t:{ru:"Народ на площади",ro:"Poporul în piață"},p:{ru:"У налоговой митинг: бабушки с петрушкой, айтишники с ноутбуками, водители маршруток. Тебя перевели в архив. Без окна.",ro:"În fața fiscului e miting: bunici cu pătrunjel, IT-iști cu laptopuri, șoferi de rutiere. Ai fost mutat la arhivă. Fără geam."}},
+  hero:{t:{ru:"Инспектор года",ro:"Inspectorul anului"},p:{ru:"План выполнен, народ уважает, шеф доволен. Тебе вручили грамоту и набор из шести рюмок. Одна уже треснула.",ro:"Planul e îndeplinit, poporul te respectă, șeful e mulțumit. Ai primit o diplomă și un set de șase păhărele. Unul deja crăpat."}},
+  terror:{t:{ru:"Гроза сектора Ботаника",ro:"Groaza sectorului Botanica"},p:{ru:"План выполнен, но стоит тебе появиться на рынке, закрываются все лотки. Тебя боятся даже голуби.",ro:"Planul e îndeplinit, dar cum apari la piață, se închid toate tarabele. Și porumbeii se tem de tine."}},
+  reprimand:{t:{ru:"Выговор с занесением",ro:"Mustrare cu avertisment"},p:{ru:"До плана не дотянул. Шеф выдал выговор и велел прийти в понедельник к 7:00. С плацындами.",ro:"N-ai atins planul. Șeful ți-a dat mustrare și te-a chemat luni la 7:00. Cu plăcinte."}},
+  archive:{t:{ru:"Сослан в архив",ro:"Exilat la arhivă"},p:{ru:"Собрано так мало, что шеф заподозрил в тебе иностранного агента. Теперь ты сортируешь декларации 1997 года.",ro:"Ai strâns atât de puțin încât șeful te-a bănuit de agent străin. Acum sortezi declarații din 1997."}},
+  pocket:{ru:"P.S. У тебя почему-то появился новый дом в Яловенах. С двумя бетонными львами.",ro:"P.S. Cumva ai acum o casă nouă la Ialoveni. Cu doi lei de beton."},
+  granny:{ru:"P.P.S. Баба Зина до сих пор рассказывает про тебя на рынке. Не самое хорошее.",ro:"P.P.S. Bunica Zina încă vorbește despre tine la piață. Nu de bine."},
+  honest:{ru:"P.S. Ни одного конверта за неделю. В отделе шепчутся, что ты шпион.",ro:"P.S. Niciun plic toată săptămâna. În departament se șoptește că ești spion."},
+};
+
+/* ---------- state ---------- */
+let S;
+const clamp = (v,lo=0,hi=100)=>Math.max(lo,Math.min(hi,v));
+const shuffle = a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const L = o => o ? (o[S.lang] ?? o.ru) : "";
+const money = n => Math.round(n).toLocaleString("ru-RU")+" "+L(UI.lei);
+const fmtClock = c => { const h=Math.floor(c), m=Math.round((c-h)*60); return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0"); };
+
+function savedLang(){ try{ return localStorage.getItem("insp-lang") || "ru"; }catch(e){ return "ru"; } }
+function fresh(lang){
+  const pool = shuffle(C.filter(c=>!c.vip).map(c=>c.id)).slice(0,14);
+  const deck = [pool.slice(0,4), pool.slice(4,7), pool.slice(7,11), pool.slice(11,14)];
+  deck[1].splice(1+Math.floor(Math.random()*2),0,"cumatru");
+  deck[3].splice(1+Math.floor(Math.random()*2),0,"ochelari");
+  const ev = shuffle(EVENTS.map(e=>e.id)).slice(0,3);
+  return {lang:lang||savedLang(), view:"intro", day:1, clock:START, plan:PLAN, collected:0, dayStart:0,
+    pop:60, boss:60, risk:0, pocket:0, deck, events:ev, queue:[], cur:null, audited:false,
+    noAudit:false, press:false, news:[], res:null, dayEnd:null, ending:null, eventId:null,
+    st:{fined:0,forgiven:0,audits:0,bribes:0,granny:false}};
+}
+
+/* ---------- sound: everything synthesized with Web Audio, no files ---------- */
+const SND = (()=>{
+  let ctx=null, master=null, on=true;
+  try{ on = localStorage.getItem("insp-snd")!=="0"; }catch(e){}
+  function ac(){
+    if(!ctx){ const A=window.AudioContext||window.webkitAudioContext; if(!A) return null;
+      ctx=new A(); master=ctx.createGain(); master.gain.value=.7; master.connect(ctx.destination); }
+    if(ctx.state==="suspended") ctx.resume();
+    return ctx;
+  }
+  function tone(f,t,dur,type="sine",vol=.2,f2){
+    const c=ac(); if(!c) return; const t0=c.currentTime+t;
+    const o=c.createOscillator(), g=c.createGain(); o.type=type;
+    o.frequency.setValueAtTime(f,t0); if(f2) o.frequency.exponentialRampToValueAtTime(f2,t0+dur);
+    g.gain.setValueAtTime(.0001,t0); g.gain.exponentialRampToValueAtTime(vol,t0+.01); g.gain.exponentialRampToValueAtTime(.0001,t0+dur);
+    o.connect(g); g.connect(master); o.start(t0); o.stop(t0+dur+.05);
+  }
+  function noise(t,dur,vol=.3,freq=1200,type="lowpass"){
+    const c=ac(); if(!c) return; const t0=c.currentTime+t;
+    const len=Math.max(1,Math.floor(c.sampleRate*dur)), buf=c.createBuffer(1,len,c.sampleRate), d=buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2);
+    const s=c.createBufferSource(), f=c.createBiquadFilter(), g=c.createGain();
+    s.buffer=buf; f.type=type; f.frequency.value=freq; g.gain.value=vol;
+    s.connect(f); f.connect(g); g.connect(master); s.start(t0);
+  }
+  const fx={
+    stamp:t=>{ noise(t,.09,.8,500); tone(120,t,.18,"sine",.6,40); },
+    cash:t=>{ noise(t,.05,.3,4000,"highpass"); tone(2093,t+.05,.5,"triangle",.14); tone(2637,t+.13,.7,"triangle",.12); },
+    nice:t=>{ tone(784,t,.15,"triangle",.12); tone(1047,t+.12,.35,"triangle",.12); },
+    paper:t=>{ noise(t,.18,.4,3000,"bandpass"); noise(t+.15,.22,.35,2200,"bandpass"); noise(t+.33,.15,.3,2600,"bandpass"); },
+    shutter:t=>{ noise(t,.02,.6,5000,"highpass"); noise(t+.07,.03,.45,3500,"highpass"); },
+    type:t=>{ for(let i=0;i<11;i++) noise(t+i*.065+Math.random()*.015,.025,.5,2000,"highpass"); tone(2400,t+.8,.7,"sine",.12); },
+    bell:t=>{ tone(1568,t,.9,"sine",.14); tone(3136,t,.35,"sine",.04); },
+    phone:t=>{ for(let r=0;r<2;r++) for(let i=0;i<12;i++) tone(i%2?1400:1100,t+r*.75+i*.04,.045,"square",.05); },
+    boo:t=>{ noise(t,1.1,.5,300); tone(150,t+.05,.9,"sawtooth",.05,110); tone(185,t+.1,.8,"sawtooth",.04,140); },
+    cheer:t=>{ noise(t,1.2,.35,1400,"bandpass"); tone(2200,t+.2,.25,"sine",.06,2900); tone(2400,t+.55,.25,"sine",.05,3100); },
+    sad:t=>{ [392,370,349].forEach((f,i)=>tone(f,t+i*.32,.3,"sawtooth",.09,f*.97)); tone(330,t+.96,.9,"sawtooth",.09,290); },
+    fanfare:t=>{ [523,659,784].forEach((f,i)=>tone(f,t+i*.13,.16,"square",.08)); tone(1047,t+.39,.8,"square",.09); tone(784,t+.39,.8,"triangle",.07); },
+    siren:t=>{ for(let i=0;i<3;i++){ tone(650,t+i*.7,.35,"sawtooth",.06,1050); tone(1050,t+i*.7+.35,.35,"sawtooth",.06,650); } },
+    chime:t=>{ tone(659,t,.8,"sine",.15); tone(523,t+.45,1.2,"sine",.15); },
+    power:t=>{ tone(240,t,.9,"sawtooth",.08,35); noise(t,.08,.4,800); },
+    whistle:t=>{ for(let i=0;i<3;i++) tone(2800,t+i*.3,.22,"sine",.08,3300); },
+    click:t=>{ noise(t,.015,.35,3000,"highpass"); },
+  };
+  return {
+    play(name,delay=0){ if(!on||!fx[name]) return; try{ fx[name](delay); }catch(e){} },
+    toggle(){ on=!on; try{ localStorage.setItem("insp-snd",on?"1":"0"); }catch(e){} if(on) this.play("click"); },
+    get on(){ return on; },
+  };
+})();
+const EVENT_SND = {brief:"phone",planUp:"phone",power:"power",system:"power",placinte:"nice",press:"shutter",hram:"chime"};
+const END_SND = {hero:"fanfare",terror:"boo",reprimand:"sad",archive:"sad",fired:"sad",protest:"whistle",arrested:"siren"};
+
+/* ---------- flow ---------- */
+function startDay(){
+  S.clock = START; S.noAudit=false; S.press=false; S.dayStart = S.collected;
+  S.queue = S.deck[S.day-1].slice(); S.cur=null; S.res=null;
+  S.eventId = S.day===1 ? "brief" : S.events[S.day-2];
+  if(S.eventId!=="brief") EVENTS.find(e=>e.id===S.eventId).fx(S);
+  SND.play(EVENT_SND[S.eventId]||"bell");
+  S.view="event"; render();
+}
+function nextCard(){
+  if(S.boss<=0) return finish("fired");
+  if(S.pop<=0) return finish("protest");
+  if(!S.queue.length || S.clock+1>END+0.001) return endDay();
+  S.cur = S.queue.shift(); S.audited=false; S.res=null; S.view="card";
+  SND.play(CARD[S.cur].vip?"phone":"bell"); render();
+  scrollToStage();
+}
+function doAudit(){
+  S.clock+=1.5; S.audited=true; S.st.audits++; SND.play("type"); render();
+}
+function act(kind){
+  const c = CARD[S.cur], a = S.audited, E = c.ev;
+  let d = {money:0,pop:0,boss:0,risk:0,pocket:0}, msg, news=null, stamp;
+  if(kind==="fine"){
+    stamp="fine"; S.st.fined++;
+    if(c.id==="zina") S.st.granny=true;
+    if(c.vip){ d.money = a?E:E*0.5; d.boss=-35; d.pop=+20; msg=MSG.vipFine; news=c.nf; }
+    else if(c.guilty){
+      d.money = a?E:Math.round(E*0.5);
+      d.boss = d.money>=100000?8:3;
+      if(c.poor){ const base=a?MSG.fineFull:MSG.finePart; d.pop = -(S.press?25:15); msg={ru:base.ru+" "+MSG.finePoor.ru,ro:base.ro+" "+MSG.finePoor.ro}; }
+      else { d.pop=-2; msg = a?MSG.fineFull:MSG.finePart; }
+      news = c.nf || MSG.nFine;
+    } else {
+      d.pop = -((c.poor?15:8)+(a?5:0)) - (S.press&&c.poor?10:0); d.boss=-5; msg = a?MSG.fineInnA:MSG.fineInn; news = c.nf || MSG.nCourt;
+    }
+  } else if(kind==="forgive"){
+    stamp="forgive"; S.st.forgiven++;
+    if(c.vip){ d.boss=+15; d.risk=+15; d.pop=-5; msg=MSG.vipForgive; news=c.nn; }
+    else if(c.guilty){
+      if(c.poor){ d.pop=+10; msg=MSG.forPoor; }
+      else { d.pop=+4; d.boss= -(E>=100000?10:3); msg = a?MSG.forGA:MSG.forG; }
+      news = c.nn || null;
+    } else { d.pop = c.poor?6:3; msg=MSG.forInn; news=c.nn||null; }
+  } else {
+    stamp="bribe"; S.st.bribes++;
+    d.pocket=c.bribe.a; d.risk=c.bribe.r; d.pop=-2; msg=MSG.bribe; news=c.nb||null;
+  }
+  S.clock+=1;
+  S.collected+=d.money; S.pocket+=d.pocket;
+  const before={pop:S.pop,boss:S.boss,risk:S.risk};
+  S.pop=clamp(S.pop+d.pop); S.boss=clamp(S.boss+d.boss); S.risk=clamp(S.risk+d.risk);
+  d.pop=S.pop-before.pop; d.boss=S.boss-before.boss; d.risk=S.risk-before.risk;
+  if(news) S.news.unshift({day:S.day,time:S.clock,txt:news});
+  if(kind==="bribe"){ SND.play("paper"); SND.play("shutter",.75); }
+  else {
+    SND.play("stamp");
+    if(d.money) SND.play("cash",.22);
+    else if(kind==="forgive") SND.play("nice",.2);
+    if(d.pop>=15) SND.play("cheer",.4);
+    else if(d.pop<=-12) SND.play("boo",.4);
+  }
+  S.res={stamp,msg,d,news};
+  S.view="result"; render(d);
+}
+function endDay(){
+  const today = S.collected - S.dayStart;
+  const lines=[];
+  if(S.queue.length){ lines.push({ru:MSG.left.ru.replace("{n}",S.queue.length),ro:MSG.left.ro.replace("{n}",S.queue.length)}); S.boss=clamp(S.boss-2*S.queue.length); }
+  const expected = S.plan*S.day/DAYS;
+  if(S.collected >= expected*0.75){ S.boss=clamp(S.boss+5); lines.push(MSG.paceGood); }
+  else { S.boss=clamp(S.boss-10); lines.push(MSG.paceBad); }
+  let caught=false;
+  if(S.risk>=10){ caught = Math.random()*100 < S.risk*0.55; if(!caught) lines.push(MSG.cnaPass); }
+  else lines.push(MSG.cnaClean);
+  S.queue=[]; S.cur=null;
+  SND.play("chime");
+  S.dayEnd={today,lines,caught}; S.view="dayEnd"; render();
+}
+function afterDay(){
+  if(S.dayEnd.caught) return finish("arrested");
+  if(S.boss<=0) return finish("fired");
+  if(S.pop<=0) return finish("protest");
+  if(S.day>=DAYS){
+    const pct=S.collected/S.plan;
+    return finish(pct>=1 ? (S.pop>=50?"hero":"terror") : pct>=0.6 ? "reprimand" : "archive");
+  }
+  S.day++; startDay();
+}
+function finish(kind){ S.ending=kind; S.view="ending"; SND.play(END_SND[kind]); render(); }
+function newGame(){ S=fresh(S?.lang); S.view="intro"; render(); }
+function setLang(l){ S.lang=l; try{localStorage.setItem("insp-lang",l)}catch(e){} SND.play("click"); render(); }
+function scrollToStage(){ const el=document.getElementById("stage"); if(el && window.innerWidth<900) el.scrollIntoView({behavior:"smooth",block:"start"}); }
+
+/* ---------- render ---------- */
+const $ = id=>document.getElementById(id);
+const esc = s=>String(s).replace(/[&<>"]/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));
+
+function meter(lab,val,pct,color,key,flash){
+  const cls = flash ? (flash>0?(key==="risk"?"flash-down":"flash-up"):(key==="risk"?"flash-up":"flash-down")) : "";
+  return `<div class="meter ${cls}"><div class="lab">${esc(lab)}</div><div class="val">${val}</div><div class="bar"><i style="width:${clamp(pct)}%;background:${color}"></i></div></div>`;
+}
+function lvlColor(v,inv){ const x=inv?100-v:v; return x>=55?"#6cc58a":x>=30?"#e0b04a":"#e06464"; }
+
+function render(d){
+  document.documentElement.lang = S.lang==="ro"?"ro":"ru";
+  $("t-title").textContent=L(UI.title); $("t-office").textContent=L(UI.office);
+  $("t-queue").textContent=L(UI.queue); $("t-news").textContent=L(UI.news);
+  $("lang-ru").setAttribute("aria-pressed",S.lang==="ru"); $("lang-ro").setAttribute("aria-pressed",S.lang==="ro");
+  $("snd").setAttribute("aria-pressed",SND.on);
+  $("snd").textContent = (SND.on?"🔊 ":"🔇 ")+L(SND.on?UI.sndOn:UI.sndOff);
+  $("clock").innerHTML = `${L(UI.day)} <b>${S.day}</b> ${L(UI.of)} ${DAYS} · <b>${fmtClock(Math.min(S.clock,END))}</b>`;
+  d = d||{};
+  $("meters").innerHTML =
+    meter(L(UI.plan), `${money(S.collected)} / ${Math.round(S.plan).toLocaleString("ru-RU")}`, S.collected/S.plan*100, "#ffd200","money",d.money) +
+    meter(L(UI.pop), S.pop, S.pop, lvlColor(S.pop),"pop",d.pop) +
+    meter(L(UI.boss), S.boss, S.boss, lvlColor(S.boss),"boss",d.boss) +
+    meter(L(UI.risk), S.risk, S.risk, lvlColor(S.risk,true),"risk",d.risk) +
+    meter(L(UI.pocket), money(S.pocket), Math.min(100,S.pocket/1000), "#b08ad8","pocket",d.pocket);
+
+  // queue
+  const q = S.queue.map(id=>CARD[id].e);
+  $("queue").innerHTML = q.length ? q.map(e=>`<span aria-hidden="true">${e}</span>`).join("") : `<em>${esc(L(UI.queueEmpty))}</em>`;
+  // news
+  $("news").innerHTML = S.news.length ? S.news.slice(0,6).map(n=>`<li><span class="d">${L(UI.day)} ${n.day} · ${fmtClock(Math.min(n.time,END))}</span>${esc(L(n.txt))}</li>`).join("") : `<li class="muted" style="border-color:var(--desk-line)">${esc(L(UI.newsEmpty))}</li>`;
+
+  renderStage();
+  renderModal();
+}
+
+function dossier(c){
+  const idx = String(C.indexOf(c)+1).padStart(2,"0");
+  const badges = c.vip?`<div class="badges"><span class="badge vip">${esc(L(UI.vip))}</span></div>`:"";
+  const audit = S.audited ? `<div class="audit"><h3>${esc(L(UI.auditRes))}</h3>${esc(L(c.tr))}</div>` : "";
+  const stamp = S.view==="result" ? `<div class="stamp ${S.res.stamp}">${esc(L(S.res.stamp==="fine"?UI.stFine:S.res.stamp==="forgive"?UI.stForgive:UI.stBribe))}</div>` : "";
+  return `<div class="folder">
+    <div class="tab">${L(UI.dossier)} № MD-13/${idx}</div>
+    <div class="sheet">
+      <div class="idrow">
+        <div class="photo" aria-hidden="true">${c.e}</div>
+        <div class="ident">
+          <h2>${esc(L(c.n))}</h2>${badges}
+          <div class="biz">${esc(L(c.b))}</div>
+          <div class="declared"><span>${esc(L(UI.declared))}</span><b>${money(c.decl)} ${esc(L(UI.perMonth))}</b></div>
+        </div>
+      </div>
+      <div class="clues"><h3>${esc(L(UI.clues))}</h3><ul>${L(c.cl).map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>
+      <blockquote class="quote">«${esc(L(c.q))}»</blockquote>
+      ${audit}
+    </div>
+    ${stamp}
+  </div>`;
+}
+
+function renderStage(){
+  const st=$("stage");
+  if(!(S.view==="card"||S.view==="result") || !S.cur){ st.innerHTML = S.view==="intro"||S.view==="ending" ? "" : `<div class="folder"><div class="tab">${L(UI.dossier)}</div><div class="sheet" style="min-height:240px"></div></div>`; return; }
+  const c=CARD[S.cur];
+  let html = dossier(c);
+  if(S.view==="card"){
+    const timeLeft = END - S.clock;
+    const auditBlocked = S.audited ? L(UI.done) : S.noAudit ? L(UI.noSys) : timeLeft < 2.5-0.001 ? L(UI.noTime) : null;
+    html += `<div class="actions">
+      <button class="act fine" id="b-fine" type="button">${esc(L(UI.fine))}<small>${esc(L(S.audited?UI.fineSubA:UI.fineSub))}</small></button>
+      <button class="act audit" id="b-audit" type="button" ${auditBlocked?"disabled":""}>${esc(L(UI.audit))}<small>${esc(auditBlocked||L(UI.auditSub))}</small></button>
+      <button class="act forgive" id="b-forgive" type="button">${esc(L(UI.forgive))}<small>${esc(L(UI.forgiveSub))}</small></button>
+      ${c.bribe?`<button class="act bribe" id="b-bribe" type="button">✉ ${esc(L(c.bribe.l))}<small>${esc(L(UI.bribeSub))}</small></button>`:""}
+    </div>`;
+  } else {
+    const r=S.res, d=r.d, chips=[];
+    if(d.money) chips.push(`<span class="chip good">${L(UI.collected)} +${money(d.money)}</span>`);
+    const ch=(v,lab,inv)=>{ if(!v) return; const good = inv? v<0 : v>0; chips.push(`<span class="chip ${good?"good":"bad"}">${esc(lab)} ${v>0?"+":""}${v}</span>`); };
+    ch(d.pop,L(UI.pop)); ch(d.boss,L(UI.boss)); ch(d.risk,L(UI.risk),true);
+    if(d.pocket) chips.push(`<span class="chip bad">${L(UI.pocket)} +${money(d.pocket)}</span>`);
+    html += `<div class="protocol">
+      <p>${esc(L(r.msg))}</p>
+      ${chips.length?`<div class="deltas">${chips.join("")}</div>`:""}
+      ${r.news?`<div class="headline"><b>${esc(L(UI.news))}</b>${esc(L(r.news))}</div>`:""}
+      <button class="act primary" id="b-next" type="button">${esc(L(UI.next))}</button>
+    </div>`;
+  }
+  st.innerHTML=html;
+  const on=(id,f)=>{const b=$(id); if(b) b.onclick=f;};
+  on("b-fine",()=>act("fine")); on("b-forgive",()=>act("forgive")); on("b-bribe",()=>act("bribe"));
+  on("b-audit",doAudit); on("b-next",nextCard);
+}
+
+function renderModal(){
+  const m=$("modal"), memo=$("memo");
+  let html="";
+  if(S.view==="intro"){
+    html = `<div class="bigstamp">${S.lang==="ro"?"SECRET":"СЕКРЕТНО"}</div>
+      <div class="kick">${esc(L(UI.introKick))}</div>
+      <h2>${esc(L(UI.introH))}</h2>
+      <p>${esc(L(UI.introP))}</p>
+      <ul>${L(UI.rules).map(r=>`<li>${esc(r)}</li>`).join("")}</ul>
+      <div class="kick" style="color:var(--ink-soft)">${esc(L(UI.chooseLang))}</div>
+      <div class="langrow"><button type="button" id="m-ru" aria-pressed="${S.lang==="ru"}">Русский</button><button type="button" id="m-ro" aria-pressed="${S.lang==="ro"}">Română</button></div>
+      <button class="act primary" id="m-go" type="button">${esc(L(UI.start))}</button>`;
+  } else if(S.view==="event"){
+    const ev = S.eventId==="brief" ? BRIEF : EVENTS.find(e=>e.id===S.eventId);
+    html = `<div class="kick">${L(UI.day)} ${S.day} · ${esc(L(UI.morning))} · 08:55</div>
+      <h2>${esc(L(ev.t))}</h2><p class="typed">${esc(L(ev.p))}</p>
+      <button class="act primary" id="m-go" type="button">${esc(L(UI.toWork))}</button>`;
+  } else if(S.view==="dayEnd"){
+    const e=S.dayEnd;
+    html = `<div class="kick">${L(UI.day)} ${S.day} · ${esc(L(UI.evening))} · 17:00</div>
+      <h2>${esc(L(UI.dayResult))}</h2>
+      <div class="stats"><div><span>${esc(L(UI.today))}</span><b>${money(e.today)}</b></div><div><span>${esc(L(UI.total))}</span><b>${Math.round(S.collected/S.plan*100)}%</b></div></div>
+      ${e.lines.map(l=>`<p>${esc(L(l))}</p>`).join("")}
+      <button class="act primary" id="m-go" type="button">${esc(L(e.caught||S.day>=DAYS||S.boss<=0||S.pop<=0?UI.finish:UI.nextDay))}</button>`;
+  } else if(S.view==="ending"){
+    const E=ENDS[S.ending];
+    const ps=[];
+    if(S.ending!=="arrested" && S.pocket>=20000) ps.push(ENDS.pocket);
+    if(S.st.bribes===0) ps.push(ENDS.honest);
+    if(S.st.granny) ps.push(ENDS.granny);
+    html = `<div class="bigstamp">${S.lang==="ro"?"FINAL":"ФИНАЛ"}</div>
+      <div class="kick">${esc(L(UI.weekEnd))}</div>
+      <h2>${esc(L(E.t))}</h2><p>${esc(L(E.p))}</p>
+      <div class="stats">
+        <div><span>${esc(L(UI.collected))}</span><b>${money(S.collected)}</b></div>
+        <div><span>${esc(L(UI.plan))}</span><b>${Math.round(S.collected/S.plan*100)}%</b></div>
+        <div><span>${esc(L(UI.pop))}</span><b>${S.pop}</b></div>
+        <div><span>${esc(L(UI.fines))}</span><b>${S.st.fined}</b></div>
+        <div><span>${esc(L(UI.audits))}</span><b>${S.st.audits}</b></div>
+        <div><span>${esc(L(UI.bribes))}</span><b>${S.st.bribes}</b></div>
+      </div>
+      ${ps.map(p=>`<p class="typed">${esc(L(p))}</p>`).join("")}
+      <button class="act primary" id="m-go" type="button">${esc(L(UI.again))}</button>`;
+  }
+  if(!html){ m.hidden=true; memo.innerHTML=""; return; }
+  memo.innerHTML=html; m.hidden=false;
+  const go=$("m-go");
+  if(S.view==="intro"){ $("m-ru").onclick=()=>setLang("ru"); $("m-ro").onclick=()=>setLang("ro"); go.onclick=startDay; }
+  else if(S.view==="event") go.onclick=nextCard;
+  else if(S.view==="dayEnd") go.onclick=afterDay;
+  else if(S.view==="ending") go.onclick=newGame;
+  go.focus({preventScroll:true});
+}
+
+$("lang-ru").onclick=()=>setLang("ru");
+$("lang-ro").onclick=()=>setLang("ro");
+$("snd").onclick=()=>{ SND.toggle(); render(); };
+
+function boot(data){ S = (data && data.S && data.S.st) ? data.S : fresh(); render(); }
+window.claude?.hot?.snapshot?.(()=>({S}));
+window.claude?.hot?.ready ? window.claude.hot.ready(boot) : boot(window.claude?.hot?.data ?? {});
+</script>
+
+</html>
